@@ -42,35 +42,69 @@ screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
 
 pygame.display.flip()
+
+ACTIONS = ["Не верю", "Ровно"]
 run = True
 players_dice = {}
+num_player_dice = {}
+bet = {}
 user_name = "Player"
 names = ["Bot_Vasya", "Bot_Oleg", "Bot_Petya", "Bot_Anna", "Bot_Nastya"]
 
 for name in names:
+    num_player_dice[name] = 6
     players_dice[name] = roll_dice(6)
 players_dice[user_name] = roll_dice(6)
+
+
+
 
 
 black = (0, 0, 0)
 blue = (0, 162, 232)
 step = first_step(6)
+num_dice = 1
+max_num_dice = 36
+val_dice = 1
+max_val_dice = 6
 step = 5
 button_is_pressed = False
 input_field_visability = False
 
 while run:
+    pos = pygame.mouse.get_pos()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if pos[0] >= 1540 and pos[0] <= 1880 and pos[1] >= 990 and pos[1] <= 1025:
+            if pos[0] >= 1540 and pos[0] <= 1880 and pos[1] >= 990 and pos[1] <= 1025 and event.button == 1:
                 button_is_pressed = True
-            if pos[0] >= 790 and pos[0] <= 1110 and pos[1] >= 817 and pos[1] <= 842 and input_field_visability:
-                button_is_pressed = True
-            
-    
-    pos = pygame.mouse.get_pos()
+            if input_field_visability:
+                if pos[0] >= 790 and pos[0] <= 1110 and pos[1] >= 817 and pos[1] <= 842 and event.button == 1:
+                    button_is_pressed = True
+
+                if pos[0] >= 790 and pos[0] <= 1110 and pos[1] >= 787 and pos[1] <= 812 and event.button == 1:
+                    button_is_pressed = True
+                
+                if pos[0] >= 950 and pos[0] <= 1010 and pos[1] >= 717 and pos[1] <= 777:
+                    if event.button == 4:
+                        val_dice += 1
+                        if val_dice > max_val_dice:
+                            val_dice = 1
+                    if event.button == 5:
+                        val_dice -= 1
+                        if val_dice < 1:
+                            val_dice = 6
+
+                if pos[0] >= 880 and pos[0] <= 940 and pos[1] >= 717 and pos[1] <= 777:
+                    if event.button == 4:
+                        num_dice += 1
+                        if num_dice > max_num_dice:
+                            num_dice = 1
+                    if event.button == 5:
+                        num_dice -= 1
+                        if num_dice < 1:
+                            num_dice = max_num_dice
 
     screen.fill((255, 255, 255))
     #area
@@ -117,12 +151,21 @@ while run:
             line("колесико мыши", 28, (0, 0, 0), (870, 690))
             pygame.draw.rect(screen, (0, 0, 0), (780, 660, 340, 190), 3, 8)
             pygame.draw.rect(screen, (0, 0, 0), (880, 717, 60, 60), 2, 4)
-            line("5", 50, (0, 0, 0), (902, 729))
-            image(f"perudo_images/dice/dice{6}.jpg", 60, (950, 717))
+            line(str(num_dice), 50, (0, 0, 0), (901 - (10 * (len(str(num_dice)) - 1)), 731))
+            image(f"perudo_images/dice/dice{val_dice}.jpg", 60, (950, 717))
             line("Подтвердить", 28, (0, 0, 0), (880, 790))
             pygame.draw.rect(screen, (200, 200, 200), (790, 787, 320, 25), 2, 4)
             if pos[0] >= 790 and pos[0] <= 1110 and pos[1] >= 787 and pos[1] <= 812:
                 pygame.draw.rect(screen, (0, 0, 0), (790, 787, 320, 25), 2, 4)
+                if button_is_pressed:
+                    print("qwezxc")
+                    input_field_visability = False
+                    button_is_pressed = False
+                    bet["val"] = val_dice
+                    bet["num"] = num_dice
+                    val_dice = 1
+                    num_dice = 1
+                    step = 0
             line("Отмена", 28, (0, 0, 0), (910, 820))
             pygame.draw.rect(screen, (200, 200, 200), (790, 817, 320, 25), 2, 4)
             if pos[0] >= 790 and pos[0] <= 1110 and pos[1] >= 817 and pos[1] <= 842:
@@ -130,6 +173,8 @@ while run:
                 if button_is_pressed:
                     input_field_visability = False
                     button_is_pressed = False
+                    val_dice = 1
+                    num_dice = 1
     #rating
     line("Рейтинг: 9678", 30, (0, 0, 0), (220, 920))
     #menu
@@ -152,6 +197,7 @@ while run:
         len_name = len_line(names[i], 24)
         pos_line_x = 475 + (i - 1) * 425 + 60 - len_name//2
         line(names[i], 24, color, (pos_line_x, 170), style=None)
+        line(f"{players_dice[names[i]]}", 24, color, (pos_line_x, 190), style=None)
         color = black
 
     for i in (0, 4):
@@ -166,13 +212,17 @@ while run:
         len_name = len_line(names[i], 24)
         pos_line_x = 475 + (i - 1) * 425 + 60 - len_name//2
         line(names[i], 24, color, (pos_line_x, 560))
+        line(f"{players_dice[names[i]]}", 24, color, (pos_line_x, 580), style=None)
         color = black
 
     #info string
-    len_name = len_line("Ставка: 5", 60)
-    pos_line_x =  960 - len_name // 2 - 65
+    # len_name = len_line("Ставка: 5", 60)
+    # pos_line_x =  960 - len_name // 2 - 65
     # line("Ставка: 5", 60, (0, 0, 0), (pos_line_x, 485))
     # image("perudo_images/dice/dice6.jpg", 50, (905 + len_name // 2, 477))
+    if len(bet) != 0:
+        line(f"Ставка: {bet["num"]}", 60, (0, 0, 0), (800, 485))
+        image(f"perudo_images/dice/dice{bet["val"]}.jpg", 50, (1000 + (25 * (len(str(bet["num"])) - 1)), 477))
     
     
 
