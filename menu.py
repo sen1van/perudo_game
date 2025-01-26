@@ -44,28 +44,19 @@ class Menu:
             self.buttons[button_text][0] += int(self.buttons[button_text][1])
         return False
     
-    def render(self, mouse_pos,  mouse_down):
+    def render(self, mouse_pos,  mouse_event):
         self.mouse_pos = mouse_pos
-        self.mouse_down = mouse_down
-        self.cursor_vel -= (self.cursor_pos - mouse_pos) * 0.1
-        self.cursor_vel *= 0.7
-        self.cursor_pos += self.cursor_vel
+        self.mouse_down = mouse_event == 1
         self.canvas.fill('white')
         self.draw_cursor = True
         
         events = []
-        
-        draw.circle(self.canvas, 'black', mouse_pos, 2)
-        
-        self.draw_button('Играть', (60, 400))
+                
+        if self.draw_button('Играть', (60, 400)):
+            events.append('start game')
         self.draw_button('Настройки', (60, 500))
         if self.draw_button('Выход', (60, 600)):
             events.append('quit')
 
-        if self.draw_cursor:
-            self.cursor_size = min(self.cursor_size + 1, self.cursor_default)
-        else:
-            self.cursor_size = max(self.cursor_size ** 0.8, 0)
-        draw.circle(self.canvas, 'black', self.cursor_pos, self.cursor_size, 2)
             
         return (self.canvas, events)

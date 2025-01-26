@@ -3,9 +3,14 @@ import random
 from pygame.locals import *
 from PIL import Image
 
+from bots import BaseBot
 
 pygame.init()
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+clock = pygame.time.Clock()
+
+cooldown = 0
 
 class Output:
     def line(self, string, font_size, color, pos, style=None):
@@ -45,7 +50,7 @@ class Perudo(GameFunc, Output):
         self.num_player_dice = {}
         self.bet = {}
         self.user_name = user_name
-        self.names = ["Bot_Vasya", "Bot_Oleg", "Bot_Petya", "Bot_Anna", "Bot_Nastya"]
+        self.names = ["Bot_Vasya", "Bot_Oleg", "Bot_Petya", "Bot_Anna", "Bot_Nastya", user_name]
 
         for name in self.names:
             self.num_player_dice[name] = 6
@@ -56,7 +61,7 @@ class Perudo(GameFunc, Output):
         self.blue = (0, 162, 232)
         self.white = (255, 255, 255)
         self.grey = (200, 200, 200)
-
+        cooldown = 0
         self.step = self.first_step(6)
         self.num_dice = 1
         self.max_num_dice = 36
@@ -65,11 +70,13 @@ class Perudo(GameFunc, Output):
         self.button_is_pressed = False
         self.input_field_visability = False
 
+        display_buff = ''
         self.step = 5
 
         self.run = True
 
         while self.run:
+            # print(self.bet)
             pos = pygame.mouse.get_pos()
             
             for event in pygame.event.get():
@@ -102,6 +109,7 @@ class Perudo(GameFunc, Output):
                                 self.num_dice -= 1
                                 if self.num_dice < 1:
                                     self.num_dice = self.max_num_dice
+                        self.val_dice = min()
             
             screen.fill(self.white)
             #area
@@ -120,7 +128,44 @@ class Perudo(GameFunc, Output):
             if self.step != 5:
                 self.line(user_name, 30, self.black, (220, 890))
                 self.line("Ход оппонента", 45, self.black, (1600, 950))
-                
+                if cooldown <= 0:
+                    display_buff = ''
+                    cooldown = random.randint(60, 300)
+                    bot = BaseBot(self.players_dice[self.names[self.step]])
+                    dices = []
+                    for i in self.names:
+                        dices += self.players_dice[i]
+                    buff = bot.step(self.bet, len(dices))
+                    print(buff)
+                    if buff == '<':
+                        if dices.count(self.bet['val']) < self.bet['num']:
+                            self.num_player_dice[self.names[self.step - 1]] -= 1
+                            display_buff = 'Меньше, прошлый игрок теряет 1 куб'
+                        else:
+                            self.num_player_dice[self.names[self.step]] -= 1
+                            display_buff = 'Не меньше, игрок теряет 1 куб'
+                        self.reroll_dices()
+                        buff = bot.first_move()
+                        self.bet['val'] = buff[1]
+                        self.bet['num'] = buff[0]
+                        cooldown += 60 * 5
+                    elif buff == '=':
+                        if dices.count(self.bet['val']) == self.bet['num']:
+                            self.num_player_dice[self.names[self.step]] += 1
+                            display_buff = 'Ровно, игрок получает +1 куб'
+                        else:
+                            self.num_player_dice[self.names[self.step]] -= 1
+                            display_buff = 'Не ровно, игрок теряет 1 куб'
+                        self.reroll_dices()
+                        buff = bot.first_move()
+                        self.bet['val'] = buff[1]
+                        self.bet['num'] = buff[0]
+                        cooldown += 60 * 5
+                    else:
+                        self.bet['val'] = buff[1]
+                        self.bet['num'] = buff[0]
+                    print(1)
+                    self.step += 1
             else:
                 if pos[0] >= 1540 and pos[0] <= 1880 and pos[1] >= 895 and pos[1] <= 930:
                     pygame.draw.rect(screen, self.black, (1540, 895, 340, 35), 3, 8)
@@ -169,13 +214,14 @@ class Perudo(GameFunc, Output):
                             self.button_is_pressed = False
                             self.val_dice = 1
                             self.num_dice = 1
+                    cooldown = random.randint(60, 300)
             #rating
-            self.line("Рейтинг: 9678", 30, self.black, (220, 920))
+            # self.line("Рейтинг: 9678", 30, self.black, (220, 920))
             #menu
-            self.image("perudo_images\icons\menu.jpg", 50, (1830, 30))
+            self.image("perudo_images/icons/menu.jpg", 50, (1830, 30))
             #dice
-            for i in range(1, 7):
-                self.image(f"perudo_images/dice/dice{self.players_dice[self.user_name][i - 1]}.jpg", 120, (550 + (i - 1) * 130, 880))
+            for i in range(len(self.players_dice[self.user_name])):
+                self.image(f"perudo_images/dice/dice{self.players_dice[self.user_name][i]}.jpg", 120, (550 + (i) * 130, 880))
 
             #enemy
             color = self.black
@@ -207,11 +253,21 @@ class Perudo(GameFunc, Output):
                 color = self.black
 
             if len(self.bet) != 0:
+                # print(self.cooldown)
                 self.line(f"Ставка: {self.bet["num"]}", 60, self.black, (800, 485))
+                self.line(display_buff, 30, self.black, (800, 550))
                 self.image(f"perudo_images/dice/dice{self.bet["val"]}.jpg", 50, (1000 + (25 * (len(str(self.bet["num"])) - 1)), 477))
 
+            if cooldown > 0:
+                # print(cooldown)
+                cooldown -= 1
             pygame.display.update()
+            clock.tick(60)
         
         pygame.quit()
+        
+    def reroll_dices(self):
+        for i in self.names:
+            self.players_dice[i] = self.roll_dice(self.num_player_dice[i])
 
 perudo_game = Perudo("РЕП_ИГРОК")
