@@ -3,6 +3,7 @@ from pygame.locals import *
 
 from menu import Menu
 from perudo_new import Perudo
+from end_menu import EndMenu
 from utils import to_center_transiton
 
 pygame.init()
@@ -39,6 +40,9 @@ while running:
     
     if 'start game' in actions:
         game = Perudo('Comial4448.ttf')
+        
+    if 'game over' in actions:
+        game = EndMenu('Comial4448.ttf', actions[-1])
     
     screen.blit(game_surface, to_center['move'])
     pygame.display.flip()

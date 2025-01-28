@@ -98,7 +98,7 @@ class Perudo:
         draw_image(self.canvas, 'perudo_images/users/bot.jpg', pos, 80)
         draw_text_center(self.canvas, self.font, nickname, self.base_size, pos + Vector2(40, 80))
         if cube_count == 0:
-            draw_text_center(self.canvas, self.font, 'X', 200, pos + Vector2(40, -70))
+            draw_text_center(self.canvas, self.font, 'X', 200, pos + Vector2(40, -100))
         else:
             draw_text_center(self.canvas, self.font, str(cube_count), self.base_size, pos + Vector2(40, 110))
     
@@ -110,7 +110,10 @@ class Perudo:
     def end_move(self):
         self.player_turn += 1
         self.player_turn %= 6
-        self.bot_cooldown = 60 * 4
+        self.bot_cooldown = 60 * 2
+
+    def end_checkmove(self):
+        self.game_state_cooldown = 60 * 5
     
     def draw_bet_updater(self):
         rect = (self.size.x / 9 * 3, self.size.y / 4 * 2, self.size.x / 9 * 3, self.size.y / 4)
@@ -161,7 +164,8 @@ class Perudo:
     def calc(self, dice_num):
         buff = []
         for i in range(6):
-            buff.append(self.players_cubes[i])
+            buff += self.players_cubes[i]
+        print(buff)
         answ = buff.count(dice_num)
         if dice_num != 1:
             answ += buff.count(1)
@@ -169,6 +173,7 @@ class Perudo:
 
     def check_equal(self):
         calced = self.calc(self.cur_bet[1])
+        print(calced)
         if calced != self.cur_bet[0]:
             self.players_cubes_count[self.player_turn] -= 1
         else:
@@ -180,7 +185,12 @@ class Perudo:
         last_player = self.player_turn - 1
         if last_player < 0:
             last_player = 5
+        while self.players_cubes_count[last_player] == 0:
+            last_player = last_player - 1
+            if last_player < 0:
+                last_player = 5
         calced = self.calc(self.cur_bet[1])
+        print(calced)
         if calced >= self.cur_bet[0]:
             self.players_cubes_count[self.player_turn] -= 1
         else:
@@ -205,10 +215,20 @@ class Perudo:
         move = bot.step(self.cur_bet, sum([self.players_cubes_count[i] for i in range(6)]))
         if move == '<':
             self.check_lower()
+            self.end_checkmove()
             return
         if move == '==':
             self.check_equal()
+            self.end_checkmove()
             return
+        self.cur_bet = move
+        self.end_move()
+
+    def bot_first_move(self):
+        print(self.players_cubes[self.player_turn], sum([self.players_cubes_count[i] for i in range(6)]), self.cur_bet)
+        bot = BaseBot(self.players_cubes[self.player_turn])
+        move = bot.first_move()
+        self.game_state = 'just move'
         self.cur_bet = move
         self.end_move()
         
@@ -232,20 +252,21 @@ class Perudo:
         
         events = []
         # print(mouse_pos)
-        if self.draw_button('Не верю!', (900, 620)) and self.player_turn == 0 and self.game_state == 'just move':
-            self.check_lower()
-            print(1)
-        if self.draw_button('Ровно!', (900, 660)) and self.player_turn == 0 and self.game_state == 'just move':
-            self.check_equal()
-        if self.draw_button('Поднять ставку', (900, 700)):
-            self.is_bet_updater_open = True
-        
-        if self.player_turn != 0 and self.bot_cooldown == 0 and self.game_state == 'just move':
-            if self.players_cubes_count[self.player_turn] != 0:
-                self.bot_just_move()
-            else:
-                self.end_move()
+        if self.game_state in ['check ==', 'check <'] and self.game_state_cooldown <= 0:
+            self.game_state = 'first move'
+            self.reroll_cubes()
             
+        if self.player_turn != 0:
+            while self.players_cubes_count[self.player_turn] == 0:
+                self.end_move()
+        if self.player_turn != 0 and self.bot_cooldown == 0:
+            if self.players_cubes_count[self.player_turn] == 0:
+                self.end_move()
+            elif self.game_state == 'just move':
+                self.bot_just_move()
+            elif self.game_state == 'first move':
+                self.bot_first_move()
+                
         for i in enumerate(self.bots):
             if i[0] + 1 == self.player_turn:
                 draw.rect(self.canvas, 'red', (i[1][0][0] - 5, i[1][0][1] - 5, 90, 90), 0, 3)
@@ -253,13 +274,39 @@ class Perudo:
             
         self.draw_cubes((900 - 124 * 6 + 24 - 50, 700 - 80), self.players_cubes[0])
         
-        if self.is_bet_updater_open and self.game_state in ['just move', 'first move'] and self.player_turn == 0:
-            self.draw_bet_updater()
-        else:
-            self.is_bet_updater_open = False
+        if self.players_cubes_count[0] > 0:
+            if self.draw_button('Не верю!', (900, 620)) and self.player_turn == 0 and self.game_state == 'just move':
+                self.check_lower()
+                self.end_checkmove()
+            if self.draw_button('Ровно!', (900, 660)) and self.player_turn == 0 and self.game_state == 'just move':
+                self.check_equal()
+                self.end_checkmove()
+            if self.draw_button('Поднять ставку', (900, 700)):
+                self.is_bet_updater_open = True
+            if self.is_bet_updater_open and self.game_state in ['just move', 'first move'] and self.player_turn == 0:
+                self.draw_bet_updater()
+            else:
+                self.is_bet_updater_open = False
+        elif self.player_turn == 0:
+            self.end_move()
         
         if self.bot_cooldown > 0:
             self.bot_cooldown -= 1
-            
         
+        if self.game_state_cooldown > 0:
+            self.game_state_cooldown -= 1
+        
+        gamers = 0
+        last = 0
+        for i in range(6):
+            if self.players_cubes_count[i] != 0:
+                gamers += 1
+                last = i
+        if gamers <= 1:
+            events.append('game over')
+            if last == 0:
+                events.append(f'Вы выиграли')
+            else:
+                events.append('Выиграл: ' + self.bots[i - 1][1])
+                
         return (self.canvas, events)

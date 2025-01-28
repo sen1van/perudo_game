@@ -30,4 +30,4 @@ class BaseBot:
     def first_move(self):
         ch = choice(self.cubes)
         buff = self.cubes.count(ch)
-        return (buff + randint(1, 5), ch)
+        return [buff + randint(1, 5), ch]

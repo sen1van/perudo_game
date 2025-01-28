@@ -1,10 +1,11 @@
 from pygame import Vector2, draw, surface, draw, Rect
 from pygame.locals import *
 
-from utils import draw_text
+from utils import draw_text, draw_text_center
 
-class Menu:
-    def __init__(self, font):
+class EndMenu:
+    def __init__(self, font, who_win):
+        self.winner = who_win
         self.size = Vector2(1200, 800)
         
         self.cursor_pos = Vector2()
@@ -51,8 +52,9 @@ class Menu:
         self.draw_cursor = True
         
         events = []
-                
-        if self.draw_button('Играть', (60, 400)):
+        draw_text_center(self.canvas, self.font, 'ИГРА ОКОНЧЕНА', 50, (self.size.x / 2, self.size.y / 4))
+        draw_text_center(self.canvas, self.font, self.winner, 50, (self.size.x / 2, self.size.y / 4 * 2))
+        if self.draw_button('Ещё раз', (60, 400)):
             events.append('start game')
         if self.draw_button('Выход', (60, 500)):
             events.append('quit')
