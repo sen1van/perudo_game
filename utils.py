@@ -40,3 +40,7 @@ def to_center_transiton(screen_size, canvas_size):
         scale_f = screen_size.x / canvas_size.x
         to_center = Vector2(0, (screen_size.y - (canvas_size.y * scale_f)) // 2)
     return {'scale': scale_f, 'move': to_center}
+
+def add_log(text):
+    with open('logs.txt', 'a') as f:
+        f.write(text + '\n')

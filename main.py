@@ -4,7 +4,7 @@ from pygame.locals import *
 from menu import Menu
 from perudo_new import Perudo
 from end_menu import EndMenu
-from utils import to_center_transiton
+from utils import to_center_transiton, add_log
 
 pygame.init()
 screen = pygame.display.set_mode((1200, 800), RESIZABLE)
@@ -37,12 +37,20 @@ while running:
     
     if 'quit' in actions:
         running = False
+        add_log('quiting...')
     
     if 'start game' in actions:
         game = Perudo('Comial4448.ttf')
+        add_log('game start')
         
     if 'game over' in actions:
         game = EndMenu('Comial4448.ttf', actions[-1])
+        add_log('game over')
+    
+    if 'exit' in actions:
+        game = Menu('Comial4448.ttf')
+        add_log('player exit')
+    
     
     screen.blit(game_surface, to_center['move'])
     pygame.display.flip()

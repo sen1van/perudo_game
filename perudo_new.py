@@ -3,7 +3,7 @@ from pygame.locals import *
 import random
 
 from bots import BaseBot
-from utils import draw_text, draw_text_center, draw_image
+from utils import draw_text, draw_text_center, draw_image, add_log
 
 class Perudo:
     def __init__(self, font):
@@ -165,7 +165,7 @@ class Perudo:
         buff = []
         for i in range(6):
             buff += self.players_cubes[i]
-        print(buff)
+        add_log(str(buff))
         answ = buff.count(dice_num)
         if dice_num != 1:
             answ += buff.count(1)
@@ -173,7 +173,7 @@ class Perudo:
 
     def check_equal(self):
         calced = self.calc(self.cur_bet[1])
-        print(calced)
+        add_log(str(calced))
         if calced != self.cur_bet[0]:
             self.players_cubes_count[self.player_turn] -= 1
         else:
@@ -190,7 +190,7 @@ class Perudo:
             if last_player < 0:
                 last_player = 5
         calced = self.calc(self.cur_bet[1])
-        print(calced)
+        add_log(str(calced))
         if calced >= self.cur_bet[0]:
             self.players_cubes_count[self.player_turn] -= 1
         else:
@@ -210,7 +210,7 @@ class Perudo:
             draw_text_center(self.canvas, self.font, buff, 40, (self.size.x / 2, self.size.y / 5 * 2 + i * 37))
     
     def bot_just_move(self):
-        print(self.players_cubes[self.player_turn], sum([self.players_cubes_count[i] for i in range(6)]), self.cur_bet)
+        add_log(f'{self.players_cubes[self.player_turn]}, {sum([self.players_cubes_count[i] for i in range(6)])}, {self.cur_bet}')
         bot = BaseBot(self.players_cubes[self.player_turn])
         move = bot.step(self.cur_bet, sum([self.players_cubes_count[i] for i in range(6)]))
         if move == '<':
@@ -225,7 +225,7 @@ class Perudo:
         self.end_move()
 
     def bot_first_move(self):
-        print(self.players_cubes[self.player_turn], sum([self.players_cubes_count[i] for i in range(6)]), self.cur_bet)
+        add_log(f'{self.players_cubes[self.player_turn]}, {sum([self.players_cubes_count[i] for i in range(6)])}, {self.cur_bet}')
         bot = BaseBot(self.players_cubes[self.player_turn])
         move = bot.first_move()
         self.game_state = 'just move'
@@ -309,4 +309,6 @@ class Perudo:
             else:
                 events.append('Выиграл: ' + self.bots[i - 1][1])
                 
+        if self.draw_button('x', (30, 30)):
+            events.append('exit')
         return (self.canvas, events)
